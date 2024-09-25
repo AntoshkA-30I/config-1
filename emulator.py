@@ -1,75 +1,100 @@
 import io
 import tarfile
 import tkinter as tk
+from tkinter import filedialog
 
-def emu():
-    global path 
-    command = input_area.get("1.0", tk.END)[2:-1]
 
-    if command == 'ls':         
-        with tarfile.open('myfiles.tar', 'a') as tar:
-            for member in tar.getmembers():
+class Emulator:
+    def __init__(self, master):
+        self.master = master
+        self.path = []
+        self.tar = None
+
+        self.master.title("Эмулятор")
+        self.output_area = tk.Text(master, fg='#E3E3E3', height=20, width=100)
+        self.input_area = tk.Text(master, fg='#E3E3E3', height=5, width=100)
+        self.copy_button = tk.Button(master, text="Ввод", fg='#E3E3E3', width=20, command = self.Emu)
+        self.input_area.insert(tk.END, "$ ")
+        self.start_button = tk.Button(master, text="Выбрать VFS", fg='#E3E3E3', command=self.StartEmu)
+#-------
+        self.start_button.pack(anchor="nw")
+        self.output_area.pack(pady=5)
+        self.input_area.pack(pady=5)
+        self.copy_button.pack(anchor="sw", pady=10, padx=40)
+
+        self.master.configure(background='#121212')
+        self.output_area.configure(background='#2B2B2B', relief='flat')
+        self.input_area.configure(background='#2B2B2B', relief='flat')
+        self.copy_button.configure(background='#2B2B2B', relief='flat')
+        self.start_button.configure(background='#2B2B2B', relief='flat')
+
+
+    def StartEmu(self):
+            vfs_path = filedialog.askopenfilename(title="Выберите архив VFS", filetypes=[("Tar files", "*.tar")])
+            if vfs_path:
+                self.tar = tarfile.open(vfs_path, 'a')
+
+
+    def Emu(self):
+        command = self.input_area.get("1.0", tk.END)[2:-1]
+
+        if command == 'ls':         
+            for member in self.tar.getmembers():
                 name = member.name
                 np = name.strip('/').split('/')
                 last = np.pop()
-                if path == np:
-                    output_area.insert(tk.END, last + " ")
-        output_area.insert(tk.END, "\n")
+                if self.path == np:
+                    self.output_area.insert(tk.END, last + " ")
+            self.output_area.insert(tk.END, "\n")
 
-    elif command == 'exit':                         
-        root.quit()
+        elif command == 'exit':    
+            self.output_area.insert(tk.END, "Exiting emulator.\n")                     
+            self.master.quit()
 
-    elif command.startswith('cd '):                        
-        parts = command.split(' ')
-        path = parts[1].split('/')  
-        path = [i for i in path if i != '']
-    
-    elif command == 'tree':
-        filesCount = 0
-        dirCount = 0
-        with tarfile.open('myfiles.tar', 'a') as tar:
-            for member in tar.getmembers():
+        elif command.startswith('cd '):                        
+            parts = command.split(' ')
+            self.path = parts[1].split('/')  
+            self.path = [i for i in self.path if i != '']
+        
+        elif command == 'tree':
+            files_count = 0
+            dir_count = 0
+            for member in self.tar.getmembers():
                 name = member.name
                 np = name.strip('/').split('/')
                 last = np.pop()
                 indent = '│   ' * (name.count('/'))
-                
+                    
                 if member.isdir():
-                    dirCount += 1
-                    output_area.insert(tk.END, indent + '├───' + last + '\n') 
+                    dir_count += 1
+                    self.output_area.insert(tk.END, indent + '├───' + last + '\n') 
                 elif member.isfile():
-                    filesCount += 1
-                    output_area.insert(tk.END, indent + '└───' + last + '\n') 
-        
-            print(dirCount, 'directories,', filesCount, 'files')
+                    files_count += 1
+                    self.output_area.insert(tk.END, indent + '└───' + last + '\n') 
 
-    input_area.delete("1.0", tk.END)
-    input_area.insert(tk.END, "$ ")
+            self.output_area.insert(tk.END, str(dir_count) + ' directories ' + str(files_count) + ' files' + '\n')
 
-'''
-    elif command.startswith('rmdir '):
-        parts = command.split(' ')
-        path1 = parts[1].split('/')  
-        path1 = [i for i in path if i != '']
-        with tarfile.open('myfiles.tar', 'r:*') as tar:
-            for member in tar.getmembers():
-                if member.name == path1:
-                    tar.remove(member)
-                    break
-            else:
-                print('File not found') '''
+        '''elif command.startswith('rmdir '):
+            #pathToDelete = os.getcwd()
+            parts = command.split(' ')
+            pathToDelete = ['root']
+            pathToDelete.append(parts[1])
+            with tarfile.open('myfiles.tar', 'a') as tar:
+                for member in tar.getmembers():
+                        name = member.name
+                        np = name.strip('/').split('/')
+                        if pathToDelete == np:
+                            tar.remove(member)
+                            print("was delete!")
+
+            print('path ', path)
+            print(parts)'''
+
+        self.input_area.delete("1.0", tk.END)
+        self.input_area.insert(tk.END, "$ ")
 
 
-
-
-path = []
-root = tk.Tk()
-root.title("GUI")
-output_area = tk.Text(root, height=20, width=100)
-output_area.pack(pady=10)
-input_area = tk.Text(root, height=5, width=100)
-input_area.pack(pady=10)
-copy_button = tk.Button(root, text="Enter", command=emu)
-copy_button.pack(pady=5)
-input_area.insert(tk.END, "$ ")
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = Emulator(root)
+    root.mainloop()
