@@ -15,18 +15,20 @@ class Emulator:
         parser = argparse.ArgumentParser()
         parser.add_argument("VFS_path", help="Введите путь до архива VFS", type=str)
         parser.add_argument("Log_path", help="Введите путь до Log файла", type=str)
+        parser.add_argument("Start_path", help="Введите путь до стартового файла", type=str)
         args = parser.parse_args()
 
-        self.tar = tarfile.open(args.VFS_path, 'a') # архив VFS
-        self.log_path = args.Log_path               # путь до xml файла
+        self.path_to_tar = args.VFS_path                # архив VFS
+        self.tar = tarfile.open(self.path_to_tar, 'a')  
+        self.log_path = args.Log_path                   # путь до xml файла
         open(self.log_path, 'w').close()
-        self.log = ET.Element('Logs')               # корневой элемент xml файла
+        self.log = ET.Element('Logs')                   # корневой элемент xml файла
 
 #------ GUI
         self.master.title('Эмулятор')
         self.output_area = tk.Text(master, fg='#E3E3E3', height=20, width=100)
         self.input_area = tk.Text(master, fg='#E3E3E3', height=5, width=100)
-        self.enter_button = tk.Button(master, text="Ввод", fg='#E3E3E3', width=20, command = self.Emu)
+        self.enter_button = tk.Button(master, text="Ввод", fg='#E3E3E3', width=20, command = self.InputButton)
         self.input_area.insert(tk.END, "$ ")
         self.VFS_button = tk.Button(master, text="Выбрать VFS", fg='#E3E3E3', command=self.ChooseVFS)
         self.log_button = tk.Button(master, text="Выбрать Log", fg='#E3E3E3', command=self.ChooseLog)
@@ -44,11 +46,21 @@ class Emulator:
         self.VFS_button.configure(background='#2B2B2B', relief='flat')
         self.log_button.configure(background='#2B2B2B', relief='flat')
 
+        self.path_to_start = args.Start_path            # стартовый файл
+        self.Start()                                    
+
+
+    def Start(self):
+        with open(self.path_to_start, 'r') as start_file:
+            for line in start_file:
+                self.command = line.strip()
+                self.Emu()
+
 
     def ChooseVFS(self):
-        vfs_path = filedialog.askopenfilename(title='Выберите архив VFS', filetypes=[('Tar files', '*.tar')])
-        if vfs_path:
-            self.tar = tarfile.open(vfs_path, 'a')
+        self.path_to_tar = filedialog.askopenfilename(title='Выберите архив VFS', filetypes=[('Tar files', '*.tar')])
+        if self.path_to_tar:
+            self.tar = tarfile.open(self.path_to_tar, 'a')
     
 
     def ChooseLog(self):
@@ -71,10 +83,22 @@ class Emulator:
         xml_file.write(data)
 
 
-    def Emu(self):
-        command = self.input_area.get('1.0', tk.END)[2:-1]
+    def InputButton(self):
+        self.command = self.input_area.get('1.0', tk.END)[2:-1]
+        self.Emu()
 
-        if command == 'ls':         
+
+    def IsDirectoryEmpthy(self, folder_name):
+        cnt = 0
+        print(folder_name)
+        for member in self.tar.getmembers():
+            if member.name.find(folder_name) != -1: 
+                cnt +=1
+        return cnt
+
+
+    def Emu(self):
+        if self.command == 'ls':         
             for member in self.tar.getmembers():
                 name = member.name
                 np = name.strip('/').split('/')
@@ -84,17 +108,17 @@ class Emulator:
             self.output_area.insert(tk.END, "\n")
             self.Log('ls')
 
-        elif command == 'exit':                       
+        elif self.command == 'exit':                       
             self.master.quit()
             self.Log('exit')
 
-        elif command.startswith('cd '):                        
-            parts = command.split(' ')
+        elif self.command.startswith('cd '):                        
+            parts = self.command.split(' ')
             self.path = parts[1].split('/')  
             self.path = [i for i in self.path if i != '']
             self.Log('cd')
         
-        elif command == 'tree':
+        elif self.command == 'tree':
             files_count = 0
             dir_count = 0
             for member in self.tar.getmembers():
@@ -113,21 +137,47 @@ class Emulator:
             self.output_area.insert(tk.END, str(dir_count) + ' directories ' + str(files_count) + ' files' + '\n')
             self.Log('tree')
 
-        '''elif command.startswith('rmdir '):
-            #pathToDelete = os.getcwd()
-            parts = command.split(' ')
-            pathToDelete = ['root']
-            pathToDelete.append(parts[1])
-            with tarfile.open('myfiles.tar', 'a') as tar:
-                for member in tar.getmembers():
-                        name = member.name
-                        np = name.strip('/').split('/')
-                        if pathToDelete == np:
-                            tar.remove(member)
-                            print("was delete!")
 
-            print('path ', path)
-            print(parts)'''
+        elif self.command.startswith('rmdir '): 
+            path_to_directory = self.command.split(' ')
+            path_to_directory = str(path_to_directory[1])
+            #directory_info = self.tar.getmember(path_to_directory)
+
+            if self.IsDirectoryEmpthy(str(path_to_directory.split('/')[-1])) == 1:
+                print('rmdir: removing directory, "' + str(path_to_directory.split('/')[-1]) + '"')
+            else:
+                print('rmdir: failed to remove "' + str(path_to_directory.split('/')[-1]) + '": Directory is not empty')
+#-------------
+            '''
+            tar_file = "VFS.tar"
+            folder_to_delete = "dir_3"
+            # Открываем архив для чтения и извлекаем все его члены
+            with tarfile.open(tar_file, "a") as tar:
+                members = tar.getmembers()
+
+            # Открываем архив для записи и добавляем все его члены, кроме удаляемой папки
+            with tarfile.open(tar_file, "a") as tar:
+                for member in members:
+                    if member.name.startswith(folder_to_delete) and member.isdir():
+                        continue
+                    tar.addfile(member, tar.extract(member))
+
+            # Удаляем пустую папку из архива
+            os.system(f"tar --delete --file={tar_file} {folder_to_delete}")
+            '''
+            '''
+            members = self.tar.getmembers()
+            # Find the folder you want to delete
+            folder_to_delete = 'dir_3'
+            # Filter out the members that are not in the folder to delete
+            members_to_keep = [member for member in members if not member.name.startswith(folder_to_delete)]
+            # Open the tar archive in write mode
+            self.tar = tarfile.open('VFS1.tar', 'a')
+            for member in members_to_keep:
+                self.tar.add(member.name)'''
+
+
+
 
         self.input_area.delete("1.0", tk.END)
         self.input_area.insert(tk.END, "$ ")
