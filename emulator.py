@@ -135,7 +135,7 @@ class Emulator:
                             if path_to_directory != item.name:
                                 tout.addfile(item, buffer)
                 self.tar.close()
-                os.system('del VFS.tar')
+                os.system('del VFS.tar')                                        #работает только на windows :)
                 os.system('move VFS.tar.tmp VFS.tar')
                 self.tar = tarfile.open(self.path_to_tar, 'a')
                 
