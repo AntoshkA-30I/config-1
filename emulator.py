@@ -1,10 +1,8 @@
 import tarfile
 import tkinter as tk
-from tkinter import filedialog
 import xml.etree.cElementTree as ET
 import datetime
 import argparse
-
 import os
 
 
@@ -46,14 +44,14 @@ class Emulator:
         self.Start()                                    
 
 
-    def Start(self):
+    def Start(self):    #запуск стартового файлв
         with open(self.path_to_start, 'r') as start_file:
             for line in start_file:
                 self.command = line.strip()
                 self.Emu()
 
 
-    def Log(self, command):
+    def Log(self, command):     #создание логов
         now = datetime.datetime.now()
         date = now.strftime("%Y-%m-%d")
         time = now.strftime("%H:%M:%S")
@@ -126,12 +124,11 @@ class Emulator:
             path_to_directory = "/".join(path_to_directory)
 
             if self.IsDirectoryEmpthy(directory_name) == 1:
-                print('rmdir: removing directory, "' + directory_name + '"')
+                self.output_area.insert(tk.END, 'rmdir: removing directory, "' + directory_name + '"' + '\n')
                 with tarfile.open(self.path_to_tar, 'r') as tin:
                     with tarfile.open(self.path_to_tar + '.tmp', 'w') as tout:
                         for item in tin.getmembers():
                             buffer = tin.extractfile(item.name)
-                            print(item.name)
                             if path_to_directory != item.name:
                                 tout.addfile(item, buffer)
                 self.tar.close()
@@ -140,9 +137,9 @@ class Emulator:
                 self.tar = tarfile.open(self.path_to_tar, 'a')
                 
             elif self.IsDirectoryEmpthy(directory_name) > 1:
-                print('rmdir: failed to remove "' + directory_name + '": Directory is not empty')
+                self.output_area.insert(tk.END, 'rmdir: failed to remove "' + directory_name + '": Directory is not empty' + '\n')
             else:
-                print('rmdir: failed to remove "' + directory_name + '": Directory is not exist')
+                self.output_area.insert(tk.END, 'rmdir: failed to remove "' + directory_name + '": Directory is not exist' + '\n')
 
             self.Log('rmdir')
 
