@@ -33,7 +33,7 @@
 ![](https://github.com/AntoshkA-30I/config-1/blob/main/images/cd2.png)
 ### Команда rmdir
 ![](https://github.com/AntoshkA-30I/config-1/blob/main/images/rmdir%201.png)
-если дериктории не существует:
+если директории не существует:
 ![](https://github.com/AntoshkA-30I/config-1/blob/main/images/rmdir%20fail%201.png)
 если директория не пустая:
 ![](https://github.com/AntoshkA-30I/config-1/blob/main/images/rmdir%20fail%202.png)
