@@ -65,7 +65,7 @@ class Emulator:
 
 
     def InputButton(self):
-        self.command = self.input_area.get('1.0', tk.END)[2:-1]
+        self.command = self.input_area.get('1.0', tk.END)[len('/'.join(self.path))+2:-1]
         self.Emu()
 
 
@@ -143,8 +143,9 @@ class Emulator:
 
             self.Log('rmdir')
 
+
         self.input_area.delete("1.0", tk.END)
-        self.input_area.insert(tk.END, "$ ")
+        self.input_area.insert(tk.END, '/'.join(self.path) + "$ ")
 
 
 if __name__ == "__main__":
