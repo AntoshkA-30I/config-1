@@ -72,3 +72,5 @@ emu.command = 'rmdir dir_2'
 emu.Emu()
 
 assert outputs == ['rmdir: failed to remove "dir_2": Directory is not empty\n']
+
+print('OK')
