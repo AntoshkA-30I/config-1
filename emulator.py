@@ -7,28 +7,24 @@ import os
 
 
 class Emulator:
-    def __init__(self, master):
+    def __init__(self, master, vfs_path, log_path, start_path):
         self.master = master
-        self.path = [] # текущий путь
-
-#------ terminal keys
-        parser = argparse.ArgumentParser()
-        parser.add_argument("VFS_path", help="Введите путь до архива VFS", type=str)
-        parser.add_argument("Log_path", help="Введите путь до Log файла", type=str)
-        parser.add_argument("Start_path", help="Введите путь до стартового файла", type=str)
-        args = parser.parse_args()
-
-        self.path_to_tar = args.VFS_path                # архив VFS
-        self.tar = tarfile.open(self.path_to_tar, 'a')  
-        self.log_path = args.Log_path                   # путь до xml файла
+        self.path = []                  # текущий путь
+        self.path_to_tar = vfs_path     # архив VFS
+        self.log_path = log_path        # путь до xml файла
+        self.path_to_start = start_path # стартовый файл
+             
+        self.tar = tarfile.open(self.path_to_tar, 'a')                 
         open(self.log_path, 'w').close()
-        self.log = ET.Element('Logs')                   # корневой элемент xml файла
+        self.log = ET.Element('Logs')   # корневой элемент xml файла        
+        
 
-#------ GUI
+#---GUI
+    def configure_gui(self):
         self.master.title('Эмулятор')
-        self.output_area = tk.Text(master, fg='#E3E3E3', height=20, width=100)
-        self.input_area = tk.Text(master, fg='#E3E3E3', height=5, width=100)
-        self.enter_button = tk.Button(master, text="Ввод", fg='#E3E3E3', width=20, command = self.InputButton)
+        self.output_area = tk.Text(self.master, fg='#E3E3E3', height=20, width=100)
+        self.input_area = tk.Text(self.master, fg='#E3E3E3', height=5, width=100)
+        self.enter_button = tk.Button(self.master, text="Ввод", fg='#E3E3E3', width=20, command = self.InputButton)
         self.input_area.insert(tk.END, "$ ")
 
         self.output_area.pack(pady=5, padx=5)
@@ -39,9 +35,6 @@ class Emulator:
         self.output_area.configure(background='#2B2B2B', relief='flat')
         self.input_area.configure(background='#2B2B2B', relief='flat')
         self.enter_button.configure(background='#2B2B2B', relief='flat')
-
-        self.path_to_start = args.Start_path            # стартовый файл
-        self.Start()                                    
 
 
     def Start(self):    #запуск стартового файлв
@@ -149,6 +142,16 @@ class Emulator:
 
 
 if __name__ == "__main__":
+#---terminal keys
+    parser = argparse.ArgumentParser()
+    parser.add_argument("VFS_path", help="Введите путь до архива VFS", type=str)
+    parser.add_argument("Log_path", help="Введите путь до Log файла", type=str)
+    parser.add_argument("Start_path", help="Введите путь до стартового файла", type=str)
+    args = parser.parse_args()
+
     root = tk.Tk()
-    app = Emulator(root)
+    app = Emulator(root, args.VFS_path, args.Log_path, args.Start_path)
+    app.configure_gui()
+    app.Start()   # выполнение стартового файла
+
     root.mainloop()
