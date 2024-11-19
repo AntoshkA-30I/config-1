@@ -37,11 +37,21 @@ class Emulator:
         self.enter_button.configure(background='#2B2B2B', relief='flat')
 
 
+    def Output(self, message):     # печать в консоль эмулятора
+        self.output_area.insert(tk.END, message)
+
+
+    def UpdateInput(self):     # считывание из области ввода
+        self.input_area.delete("1.0", tk.END)       
+        self.input_area.insert(tk.END, '/'.join(self.path) + "$ ")
+
+
     def Start(self):    #запуск стартового файлв
         with open(self.path_to_start, 'r') as start_file:
             for line in start_file:
                 self.command = line.strip()
                 self.Emu()
+                self.UpdateInput()
 
 
     def Log(self, command):     #создание логов
@@ -60,6 +70,7 @@ class Emulator:
     def InputButton(self):
         self.command = self.input_area.get('1.0', tk.END)[len('/'.join(self.path))+2:-1]
         self.Emu()
+        self.UpdateInput()
 
 
     def IsDirectoryEmpthy(self, folder_name):
@@ -77,8 +88,8 @@ class Emulator:
                 np = name.strip('/').split('/')
                 last = np.pop()
                 if self.path == np:
-                    self.output_area.insert(tk.END, last + " ")
-            self.output_area.insert(tk.END, "\n")
+                    self.Output(last + " ")
+            self.Output('\n')
             self.Log('ls')
 
         elif self.command == 'exit':                       
@@ -102,12 +113,12 @@ class Emulator:
                     
                 if member.isdir():
                     dir_count += 1
-                    self.output_area.insert(tk.END, indent + '├───' + last + '\n') 
+                    self.Output(indent + '├───' + last + '\n')
                 elif member.isfile():
                     files_count += 1
-                    self.output_area.insert(tk.END, indent + '└───' + last + '\n') 
+                    self.Output(indent + '└───' + last + '\n')
 
-            self.output_area.insert(tk.END, str(dir_count) + ' directories ' + str(files_count) + ' files' + '\n')
+            self.Output(str(dir_count) + ' directories ' + str(files_count) + ' files' + '\n')
             self.Log('tree')
 
         elif self.command.startswith('rmdir '): 
@@ -117,7 +128,7 @@ class Emulator:
             path_to_directory = "/".join(path_to_directory)
 
             if self.IsDirectoryEmpthy(directory_name) == 1:
-                self.output_area.insert(tk.END, 'rmdir: removing directory, "' + directory_name + '"' + '\n')
+                self.Output('rmdir: removing directory, "' + directory_name + '"' + '\n')
                 with tarfile.open(self.path_to_tar, 'r') as tin:
                     with tarfile.open(self.path_to_tar + '.tmp', 'w') as tout:
                         for item in tin.getmembers():
@@ -130,15 +141,12 @@ class Emulator:
                 self.tar = tarfile.open(self.path_to_tar, 'a')
                 
             elif self.IsDirectoryEmpthy(directory_name) > 1:
-                self.output_area.insert(tk.END, 'rmdir: failed to remove "' + directory_name + '": Directory is not empty' + '\n')
+                self.Output('rmdir: failed to remove "' + directory_name + '": Directory is not empty' + '\n')
             else:
-                self.output_area.insert(tk.END, 'rmdir: failed to remove "' + directory_name + '": Directory is not exist' + '\n')
+                self.Output('rmdir: failed to remove "' + directory_name + '": Directory is not exist' + '\n')
 
             self.Log('rmdir')
 
-
-        self.input_area.delete("1.0", tk.END)
-        self.input_area.insert(tk.END, '/'.join(self.path) + "$ ")
 
 
 if __name__ == "__main__":
